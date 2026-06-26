@@ -1,4 +1,5 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
+import { FleetProvider } from './store/fleetContext';
 import Navbar from './components/Navbar';
 import FleetDashboard from './pages/FleetDashboard';
 import AircraftDetail from './pages/AircraftDetail';
@@ -11,22 +12,24 @@ import ValidationPage from './pages/ValidationPage';
 
 export default function App() {
   return (
-    <BrowserRouter>
-      <div className="min-h-screen bg-[#0a0e1a]">
-        <Navbar />
-        <main className="pt-14">
-          <Routes>
-            <Route path="/" element={<FleetDashboard />} />
-            <Route path="/aircraft/:id" element={<AircraftDetail />} />
-            <Route path="/alerts" element={<AlertsPage />} />
-            <Route path="/maintenance" element={<MaintenancePage />} />
-            <Route path="/methodology" element={<MethodologyPage />} />
-            <Route path="/worked-example" element={<WorkedExamplePage />} />
-            <Route path="/validation" element={<ValidationPage />} />
-            <Route path="/portfolio" element={<PortfolioPage />} />
-          </Routes>
-        </main>
-      </div>
-    </BrowserRouter>
+    <FleetProvider>
+      <BrowserRouter>
+        <div style={{ minHeight: '100vh', background: '#070a10' }}>
+          <Navbar />
+          <main style={{ paddingTop: 56 }}>
+            <Routes>
+              <Route path="/"                element={<FleetDashboard />} />
+              <Route path="/aircraft/:id"    element={<AircraftDetail />} />
+              <Route path="/alerts"          element={<AlertsPage />} />
+              <Route path="/maintenance"     element={<MaintenancePage />} />
+              <Route path="/methodology"     element={<MethodologyPage />} />
+              <Route path="/worked-example"  element={<WorkedExamplePage />} />
+              <Route path="/validation"      element={<ValidationPage />} />
+              <Route path="/portfolio"       element={<PortfolioPage />} />
+            </Routes>
+          </main>
+        </div>
+      </BrowserRouter>
+    </FleetProvider>
   );
 }
