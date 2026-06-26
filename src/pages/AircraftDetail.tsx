@@ -10,6 +10,38 @@ import CalcBreakdown from '../components/CalcBreakdown';
 
 const SEGMENTS = 24;
 
+function kpiCards(ac: NonNullable<ReturnType<typeof useAircraft>>) {
+  const rel = ac.reliability * 100;
+  const relColor = rel >= 95 ? '#22c55e' : rel >= 85 ? '#facc15' : '#f43f5e';
+  const mtbfNote = ac.mtbf < 1000
+    ? 'Low MTBF — frequent failures in history. Confidence interval wide at this sample size.'
+    : ac.mtbf < 3000
+      ? 'Moderate MTBF. Based on small failure sample; 90% CI spans roughly ×3 uncertainty.'
+      : 'High MTBF. Valid during useful-life phase only; wear-out phase will increase λ.';
+  const relNote = rel >= 97
+    ? `Excellent. Implies failure rate λ = ${(1 / ac.mtbf * 1e4).toFixed(2)}×10⁻⁴/hr. Exponential model — assumes constant failure rate.`
+    : rel >= 90
+      ? `Acceptable. Based on R(t)=e^(−λt). Assumes random-failure regime; optimistic if near end-of-life.`
+      : `Low reliability — high probability of in-mission failure. Model may still be underestimating risk if wear-out has begun.`;
+  const cycleNote = ac.flightCycles > 30000
+    ? 'High cycle count. Structural fatigue life is cycle-limited for pressure bulkhead and landing gear. Review damage-tolerance limits.'
+    : ac.flightCycles > 15000
+      ? 'Mid-life cycle count. Monitor high-cycle fatigue items (skin panels, fastener holes) per maintenance manual intervals.'
+      : 'Low cycle count. Structural life not yet a primary concern; engine hours likely the binding life limit.';
+  const fhNote = ac.flightHours > 20000
+    ? 'High-time aircraft. Stress-adjusted effective age may significantly exceed calendar age for high-stress scenarios.'
+    : ac.flightHours > 10000
+      ? 'Mid-time aircraft. Cross-reference cycles to determine whether this is a short-haul (cycle-limited) or long-haul (hour-limited) operation.'
+      : 'Low-time aircraft. Engine and primary structure life limits not yet approached; maintenance driven by calendar intervals.';
+
+  return [
+    { k: 'FLIGHT HOURS',       v: ac.flightHours.toLocaleString() + ' hrs', interp: fhNote,    color: '#22d3ee' },
+    { k: 'CYCLES',             v: ac.flightCycles.toLocaleString(),          interp: cycleNote,  color: '#22d3ee' },
+    { k: 'MTBF',               v: ac.mtbf.toLocaleString() + ' hrs',         interp: mtbfNote,   color: '#22d3ee' },
+    { k: '100-HR RELIABILITY', v: rel.toFixed(1) + '%',                      interp: relNote,    color: relColor  },
+  ];
+}
+
 function ChartTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
   return (
@@ -111,18 +143,13 @@ export default function AircraftDetail() {
         </div>
       </div>
 
-      {/* KPI row */}
+      {/* KPI row — with live engineering interpretations */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 8, marginBottom: 24 }}>
-        {[
-          { k: 'FLIGHT HOURS',       v: ac.flightHours.toLocaleString(),          hint: 'Cumulative engine-on hours' },
-          { k: 'CYCLES',             v: ac.flightCycles.toLocaleString(),          hint: '1 takeoff + landing = 1 cycle' },
-          { k: 'MTBF',               v: ac.mtbf.toLocaleString() + ' HRS',         hint: 'Mean Time Between Failures = total hours ÷ failures' },
-          { k: '100-HR RELIABILITY', v: (ac.reliability * 100).toFixed(1) + '%',   hint: 'R(100) = e^(−λ×100), probability of completing 100-hr mission' },
-        ].map(({ k, v, hint }) => (
-          <div key={k} className="panel" style={{ padding: '14px 16px' }} title={hint}>
+        {kpiCards(ac).map(({ k, v, interp, color }) => (
+          <div key={k} className="panel" style={{ padding: '14px 16px' }}>
             <div style={{ fontFamily: 'var(--font-data)', fontSize: 9, letterSpacing: '0.15em', color: '#374561', marginBottom: 6 }}>{k}</div>
-            <div style={{ fontFamily: 'var(--font-data)', fontSize: 18, fontWeight: 700, color: '#22d3ee' }}>{v}</div>
-            <div style={{ fontFamily: 'var(--font-data)', fontSize: 8, color: '#2a3a52', marginTop: 4, lineHeight: 1.5 }}>{hint}</div>
+            <div style={{ fontFamily: 'var(--font-data)', fontSize: 18, fontWeight: 700, color: color ?? '#22d3ee' }}>{v}</div>
+            <div style={{ fontSize: 10, color: '#4a5a7a', marginTop: 6, lineHeight: 1.6 }}>{interp}</div>
           </div>
         ))}
       </div>

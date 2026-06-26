@@ -2,7 +2,6 @@ import { Activity, AlertTriangle, Wrench, Plane, Heart } from 'lucide-react';
 import { useFleet } from '../store/fleetContext';
 import StatCard from '../components/StatCard';
 import AircraftCard from '../components/AircraftCard';
-import ReadingGuide from '../components/ReadingGuide';
 import type { FleetSummary } from '../types';
 
 function computeSummary(fleet: ReturnType<typeof useFleet>['fleet']): FleetSummary {
@@ -48,9 +47,6 @@ export default function FleetDashboard() {
           {s.totalAircraft} aircraft monitored · simulated telemetry · educational proof-of-concept
         </p>
       </div>
-
-      {/* Reading guide (Fix 1) */}
-      <ReadingGuide />
 
       {/* KPI strip */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, marginBottom: 24 }}>

@@ -1,5 +1,5 @@
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, Bell, Wrench, BookOpen, Calculator, User, FlaskConical } from 'lucide-react';
+import { LayoutDashboard, Bell, Wrench, BookOpen, Calculator, FlaskConical } from 'lucide-react';
 
 const links = [
   { to: '/',               label: 'FLEET',    icon: LayoutDashboard },
@@ -8,7 +8,6 @@ const links = [
   { to: '/methodology',    label: 'ENG BASIS',icon: BookOpen },
   { to: '/worked-example', label: 'CALC',     icon: Calculator },
   { to: '/validation',     label: 'VALIDATE', icon: FlaskConical },
-  { to: '/portfolio',      label: 'PORTFOLIO',icon: User },
 ];
 
 export default function Navbar() {

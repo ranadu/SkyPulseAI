@@ -7,7 +7,6 @@ import AlertsPage from './pages/AlertsPage';
 import MaintenancePage from './pages/MaintenancePage';
 import MethodologyPage from './pages/MethodologyPage';
 import WorkedExamplePage from './pages/WorkedExamplePage';
-import PortfolioPage from './pages/PortfolioPage';
 import ValidationPage from './pages/ValidationPage';
 
 export default function App() {
@@ -25,7 +24,6 @@ export default function App() {
               <Route path="/methodology"     element={<MethodologyPage />} />
               <Route path="/worked-example"  element={<WorkedExamplePage />} />
               <Route path="/validation"      element={<ValidationPage />} />
-              <Route path="/portfolio"       element={<PortfolioPage />} />
             </Routes>
           </main>
         </div>
