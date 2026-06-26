@@ -1,7 +1,7 @@
 % ============================================================
 %  Aircraft Fleet Predictive Maintenance System
-%  Engineering Technical Report — Revision A
-%  Author: Robert A. — Aerospace Engineering Graduate
+%  Engineering Technical Report -- Revision A
+%  Author: Robert A. -- Aerospace Engineering Graduate
 % ============================================================
 \documentclass[11pt, a4paper]{report}
 
@@ -23,17 +23,12 @@
 \usepackage{parskip}
 
 % --- Colours ------------------------------------------------
-\definecolor{amberHUD}{RGB}{232, 160, 32}
-\definecolor{cyanHUD}{RGB}{34, 211, 238}
 \definecolor{dimgray}{RGB}{74, 90, 122}
-\definecolor{critred}{RGB}{244, 63, 94}
-\definecolor{warnorg}{RGB}{251, 146, 60}
-\definecolor{safegrn}{RGB}{34, 197, 94}
 
 % --- Header / Footer ----------------------------------------
 \pagestyle{fancy}
 \fancyhf{}
-\fancyhead[L]{\small\texttt{SKYPULSE AI — ENGINEERING TECHNICAL REPORT}}
+\fancyhead[L]{\small\texttt{SKYPULSE AI -- ENGINEERING TECHNICAL REPORT}}
 \fancyhead[R]{\small\texttt{REV A / JUNE 2026}}
 \fancyfoot[C]{\small\thepage}
 \renewcommand{\headrulewidth}{0.4pt}
@@ -68,10 +63,10 @@
   \hrule height 0.6pt
   \vspace{1.5cm}
   \begin{tabular}{ll}
-    \textbf{Author}  & Robert A. — Aerospace Engineering Graduate \\[4pt]
+    \textbf{Author}  & Robert A. -- Aerospace Engineering Graduate \\[4pt]
     \textbf{Date}    & June 2026 \\[4pt]
     \textbf{Revision}& A \\[4pt]
-    \textbf{Status}  & Educational Proof-of-Concept — Not for Operational Use \\
+    \textbf{Status}  & Educational Proof-of-Concept -- Not for Operational Use \\
   \end{tabular}
   \vspace{2cm}
 
@@ -87,12 +82,10 @@
 
   \vfill
   {\small\color{dimgray}
-    \textbf{DISCLAIMER:} This document describes a software simulation.
-    All sensor data is procedurally generated.
-    No results herein should be used for real aircraft maintenance,
-    flight operations, or airworthiness decisions.
-    Real PHM systems require certified data acquisition,
-    validated degradation models, and compliance with FAA AC 120-66B / EASA Part-M.
+    \textbf{DISCLAIMER:} This is a software simulation using procedurally generated data.
+    No results should be used for real aircraft maintenance or airworthiness decisions.
+    Operational PHM systems require certified data acquisition, validated degradation models,
+    and compliance with FAA AC 120-66B / EASA Part-M.
   }
 \end{titlepage}
 
@@ -102,80 +95,67 @@
 % ============================================================
 \chapter{Executive Summary}
 
-This report documents a software proof-of-concept demonstrating how
-reliability-engineering principles can be applied to aircraft fleet predictive
-maintenance. The system ingests simulated sensor telemetry from eight aircraft,
-computes subsystem health scores using weighted sensor models, estimates
-Remaining Useful Life (RUL) via a stress-adjusted degradation model,
-calculates mission reliability using the exponential reliability function, and
-prioritises maintenance actions using a Failure Mode and Effects Analysis (FMEA)
-risk scoring approach.
+This report documents a proof-of-concept PHM (Prognostics and Health Management)
+system for aircraft fleet maintenance. The system takes simulated sensor data from
+eight aircraft, computes subsystem health scores, estimates Remaining Useful Life
+(RUL) using a stress-adjusted model, calculates mission reliability via the
+exponential function, and ranks maintenance tasks by FMEA risk score.
 
-The primary engineering contribution is not the software interface but the
-explicit, traceable calculation chain from raw sensor readings to maintenance
-recommendation. Every displayed value can be derived by hand from first
-principles, and the worked examples in Section~\ref{ch:worked} demonstrate
-that derivation in full.
+The focus throughout is on keeping the calculations explicit and traceable. Every
+number on the dashboard can be derived by hand from the formulas in
+Chapter~\ref{ch:methodology}, and the worked example in Chapter~\ref{ch:worked}
+does exactly that for a single aircraft.
 
 \medskip
-\noindent\textbf{Key Finding:}
-Rule-based Prognostics and Health Management (PHM) with explicit engineering
-models produces interpretable, auditable results that align with industry
-practice at the conceptual level. The principal limitation is the absence of
-real sensor data and validated degradation curves, which would be required
-before any operational deployment.
+\noindent\textbf{Main finding:} Rule-based PHM with explicit engineering models
+gives interpretable, auditable results. The gap to a production system is real
+but well-defined: it requires actual sensor data, validated degradation curves,
+and regulatory approval. That gap is documented in Chapters~\ref{ch:limitations}
+and~\ref{ch:production}.
 
 % ============================================================
-\chapter{Problem Statement and Motivation}
+\chapter{Problem Statement}
 
-Commercial aircraft maintenance represents a significant cost and safety
-challenge. Unscheduled maintenance events — failures that occur outside planned
-maintenance windows — cost the industry an estimated \$9 billion annually in
-direct costs and operational disruption (IATA, 2023).
-
-The dominant maintenance paradigm, Scheduled Maintenance, replaces or inspects
-components on fixed time or cycle intervals regardless of actual condition. This
-has two failure modes:
+Unscheduled maintenance events cost the aviation industry roughly \$9 billion
+per year in direct costs and disruption (IATA, 2023). Most of this comes from
+two problems with the standard scheduled-maintenance approach:
 
 \begin{enumerate}
-  \item \textbf{Over-maintenance:} Serviceable components are replaced before
-        end of life, wasting cost and labour.
-  \item \textbf{Under-maintenance:} Components that degrade faster than their
-        rated interval fail before the next scheduled action.
+  \item \textbf{Over-maintenance:} Parts get replaced before they need to be,
+        which wastes money and maintenance hours.
+  \item \textbf{Under-maintenance:} Parts that degrade faster than the rated
+        interval fail before the next scheduled check.
 \end{enumerate}
 
-Condition-Based Maintenance (CBM) and Predictive Maintenance (PdM) address
-both failure modes by estimating current component health from sensor data and
-scheduling maintenance at the optimum point in the component's actual remaining
-life. This project implements a simplified PHM system to demonstrate the
-core engineering calculations that underpin such a system.
+Condition-Based Maintenance (CBM) fixes both by estimating actual component
+health from sensor data and scheduling work based on real condition rather than
+calendar time. This project builds a simplified version of that calculation
+chain to show how the underlying engineering works.
 
 % ============================================================
 \chapter{Scope and Objectives}
 
-\section{Scope}
+\section{What This Project Covers}
 
-This project covers:
 \begin{itemize}
-  \item Simulated telemetry generation for 8 aircraft across 4 health scenarios
+  \item Simulated telemetry for 8 aircraft across 4 health scenarios
         (nominal, degraded, warning, critical).
-  \item Health score computation for 6 aircraft subsystems.
-  \item Stress-adjusted RUL estimation for the engine subsystem.
-  \item Exponential mission reliability computation.
-  \item FMEA Risk Priority Number (RPN) scoring and maintenance prioritisation.
-  \item A live web-based display of all computed values with inline calculation
-        breakdowns.
+  \item Health score computation for 6 subsystems per aircraft.
+  \item Stress-adjusted RUL estimation for the engine.
+  \item Mission reliability using the exponential model.
+  \item FMEA RPN scoring for maintenance prioritisation.
+  \item A live web interface showing all computed values with inline
+        calculation breakdowns.
 \end{itemize}
 
-\section{Out of Scope}
+\section{What This Project Does Not Cover}
 
-The following are explicitly outside this proof-of-concept:
 \begin{itemize}
-  \item Real sensor data acquisition or aircraft interface.
-  \item Calibrated degradation models from fleet data.
+  \item Real sensor data or aircraft bus integration.
+  \item Calibrated degradation models from fleet history.
   \item Regulatory compliance (FAA, EASA, MIL-HDBK-217).
-  \item Statistical parameter estimation (Weibull fitting, Bayesian updating).
-  \item Cost modelling or maintenance scheduling optimisation.
+  \item Weibull fitting or Bayesian parameter estimation.
+  \item Maintenance cost modelling or scheduling optimisation.
 \end{itemize}
 
 % ============================================================
@@ -186,50 +166,47 @@ The following are explicitly outside this proof-of-concept:
   \textbf{Assumption} & \textbf{Value / Form} & \textbf{Justification} \\
   \midrule
   \endhead
-  Constant failure rate (exponential reliability) &
+  Constant failure rate &
   $R(t) = e^{-\lambda t}$ &
-  Valid during the useful-life (random-failure) phase of the bathtub curve.
-  Simplest tractable model; standard in early-phase reliability assessments. \\
+  Valid in the useful-life phase of the bathtub curve. Simplest tractable model;
+  standard in early-phase reliability work. \\
   \addlinespace
-  Linear health interpolation between sensor thresholds &
+  Linear interpolation between sensor thresholds &
   $H = 80 + \frac{(x_{warn} - x)}{(x_{warn} - x_{nom})} \times 20$ &
-  Absence of calibrated degradation data. Linear interpolation is conservative
-  and transparent. \\
+  No calibrated degradation data available. Linear is conservative and easy to
+  audit. \\
   \addlinespace
   Scalar stress factor from temperature and vibration &
   $SF = \frac{T_{factor} + V_{factor}}{2}$ &
-  Simplified proxy for Miner's rule fatigue accumulation and Arrhenius thermal
-  degradation. Both effects are known to accelerate life consumption above
-  nominal. \\
+  Simplified proxy for Miner's rule (fatigue) and Arrhenius (thermal). Both
+  effects are known to accelerate component aging above nominal conditions. \\
   \addlinespace
   Temperature stress coefficient $k_T = 0.5$ &
   $T_{factor} = 1 + (1 - T_{score}) \times 0.5$ &
-  Represents Arrhenius activation energy effect. Coefficient is illustrative;
-  real values are alloy- and failure-mode-specific. \\
+  Represents Arrhenius thermal activation. The specific coefficient is
+  illustrative; real values are alloy- and failure-mode-specific. \\
   \addlinespace
   Vibration stress coefficient $k_V = 0.8$ &
   $V_{factor} = 1 + (1 - V_{score}) \times 0.8$ &
-  Higher coefficient than temperature reflects that vibration drives mechanical
-  fatigue via Miner's rule more directly at sub-critical amplitudes. \\
+  Set higher than temperature because vibration drives mechanical fatigue via
+  Miner's rule more directly at sub-critical amplitudes. \\
   \addlinespace
-  Engine rated life = 25,000 flight hours &
+  Engine rated life = 25,000 FH &
   OEM life limit &
   Typical TBO for a CFM56-class turbofan. Used as a reference only. \\
   \addlinespace
   MTBF from point estimate &
   $\text{MTBF} = T_{total} / N_{failures}$ &
-  Standard MLE estimator for exponential distribution. Acknowledged limitation:
-  wide confidence interval at small $N$. \\
+  Standard MLE estimator for the exponential distribution. Known limitation:
+  wide CI at small $N$ (see Section~\ref{sec:mtbf}). \\
   \addlinespace
-  ISO 10816 Zone B upper boundary as VSI warning threshold &
+  VSI warning at 2.5 &
   $\text{VSI}_{warn} = 2.5$ &
-  ISO 10816-3 classifies values up to 2.8 mm/s as acceptable for large
-  turbomachinery. 2.5 is used as an early-warning margin. \\
+  ISO 10816-3 Zone B extends to 2.8 mm/s. Using 2.5 as an early-warning margin. \\
   \addlinespace
-  FMEA severity is subsystem-fixed, not failure-mode-specific &
+  FMEA severity fixed per subsystem &
   Engine: $S = 9$ &
-  Simplified for proof-of-concept. Production FMEA assigns severity per
-  failure mode (e.g., engine fire $S = 10$, oil chip $S = 6$). \\
+  Simplified. A real FMEA assigns severity per failure mode, not per subsystem. \\
   \bottomrule
 \end{longtable}
 
@@ -237,28 +214,29 @@ The following are explicitly outside this proof-of-concept:
 \chapter{Engineering Methodology}
 \label{ch:methodology}
 
-\section{Sensor Normalisation — Health Score}
+\section{Sensor Normalisation}
 
-Each raw sensor reading is mapped to a $[0, 100]$ health score using linear
+Each sensor reading is mapped to a $[0, 100]$ score using piecewise linear
 interpolation across three threshold values: nominal ($x_{nom}$), warning
-($x_{warn}$), and critical ($x_{crit}$).
+($x_{warn}$), and critical ($x_{crit}$). Scores above 80 are in the nominal
+band; below 40 is critical.
 
-\subsection{Three-Band Scoring Function}
+\subsection{Scoring Function}
 
 \[
 H(x) =
 \begin{cases}
-100 & \text{if } x \leq x_{nom} \text{ (above nominal, higher-is-better)} \\[4pt]
-80 + 20 \cdot \dfrac{x_{warn} - x}{x_{warn} - x_{nom}} & \text{if } x_{nom} < x \leq x_{warn} \\[8pt]
-40 + 40 \cdot \dfrac{x_{crit} - x}{x_{crit} - x_{warn}} & \text{if } x_{warn} < x \leq x_{crit} \\[8pt]
-\max\!\left(0,\; 40 \cdot \dfrac{x}{x_{crit}}\right) & \text{if } x > x_{crit}
+100 & x \leq x_{nom} \\[4pt]
+80 + 20 \cdot \dfrac{x_{warn} - x}{x_{warn} - x_{nom}} & x_{nom} < x \leq x_{warn} \\[8pt]
+40 + 40 \cdot \dfrac{x_{crit} - x}{x_{crit} - x_{warn}} & x_{warn} < x \leq x_{crit} \\[8pt]
+\max\!\left(0,\; 40 \cdot \dfrac{x}{x_{crit}}\right) & x > x_{crit}
 \end{cases}
 \]
 
-The direction of inequality reverses for sensors where a lower reading is worse
-(e.g., oil pressure, battery voltage).
+For sensors where lower is worse (oil pressure, battery voltage), the
+inequalities are reversed.
 
-\subsection{Subsystem Sensor Thresholds}
+\subsection{Sensor Thresholds}
 
 \begin{table}[h!]
 \centering
@@ -274,36 +252,28 @@ Electrical  & Battery Voltage& 28.0 & 25.5 & 23.0 & V \\
             & Generator Volt & 115  & 112  & 108  & V AC \\
 Avionics    & Temperature    & 45   & 60   & 75   & $^\circ$C \\
 ECS         & Temperature    & 45   & 58   & 72   & $^\circ$C \\
-Landing Gear& Cycles         & 0    & —    & 50000& cycles \\
+Landing Gear& Cycles         & 0    & --   & 50000& cycles \\
 \bottomrule
 \end{tabular}
-\caption{Sensor normalisation thresholds by subsystem.}
+\caption{Sensor thresholds by subsystem.}
 \end{table}
 
-\section{Subsystem Health Score Formulas}
+\section{Subsystem Health Scores}
 
-Each subsystem health score $H_{sub}$ is a weighted sum of individual sensor
-scores $h_i$, where weights $w_i$ reflect engineering judgment on relative
-diagnostic significance.
+Each subsystem score is a weighted sum of sensor scores. Weights reflect the
+relative diagnostic importance of each sensor for that subsystem.
 
-\subsection{Engine Health Score}
+\subsection{Engine}
 
 \[
 H_{engine} = 0.30 \cdot h_T + 0.30 \cdot h_V + 0.20 \cdot h_P + 0.20 \cdot h_U
 \]
 
-Where:
-\begin{align*}
-  h_T &= \text{temperature score} \\
-  h_V &= \text{vibration score} \\
-  h_P &= \text{oil pressure score} \\
-  h_U &= \text{usage fraction score} = \max\!\left(0,\; 100\left(1 - \frac{FH}{L_{rated}}\right)\right)
-\end{align*}
+Temperature and vibration share equal top weight at 0.30 each because both
+are direct indicators of thermomechanical degradation in turbofans.
+$h_U$ is the usage fraction score, where $h_U = 100 \cdot (1 - FH/L_{rated})$.
 
-Temperature and vibration carry equal weight at 0.30 each, reflecting that both
-are primary indicators of thermomechanical degradation in turbofan engines.
-
-\subsection{Other Subsystem Formulas}
+\subsection{Other Subsystems}
 
 \begin{align}
   H_{hydraulic}   &= 0.60 \cdot h_P + 0.40 \cdot h_U \\[4pt]
@@ -315,7 +285,7 @@ are primary indicators of thermomechanical degradation in turbofan engines.
 
 \section{Vibration Severity Index}
 
-The Vibration Severity Index (VSI) is defined per ISO 10816 as:
+Per ISO 10816:
 
 \[
 \text{VSI} = \frac{V_{measured}}{V_{nominal}} = \frac{V_{measured}}{2.0 \text{ mm/s}}
@@ -327,10 +297,10 @@ The Vibration Severity Index (VSI) is defined per ISO 10816 as:
 \toprule
 \textbf{Zone} & \textbf{VSI Range} & \textbf{Classification} & \textbf{Action} \\
 \midrule
-A & $\leq 1.8$   & Good (new machine)                     & None \\
-B & $1.8 - 2.8$  & Acceptable (unrestricted operation)    & Monitor trend \\
-C & $2.8 - 4.5$  & Unsatisfactory (short-term only)       & Investigate; schedule maintenance \\
-D & $> 4.5$      & Unacceptable (damage risk)             & Remove from service \\
+A & $\leq 1.8$   & Good                        & None \\
+B & $1.8 - 2.8$  & Acceptable                  & Monitor trend \\
+C & $2.8 - 4.5$  & Unsatisfactory              & Investigate; schedule maintenance \\
+D & $> 4.5$      & Unacceptable                & Remove from service \\
 \bottomrule
 \end{tabular}
 \caption{ISO 10816 vibration severity zones.}
@@ -340,7 +310,9 @@ D & $> 4.5$      & Unacceptable (damage risk)             & Remove from service 
 
 \subsection{Stress Factor}
 
-The stress factor $SF$ converts actual flight hours into equivalent damage hours:
+The stress factor converts actual flight hours into equivalent damage hours.
+An engine running hot and rough accumulates fatigue faster than its rated
+conditions assume.
 
 \begin{align}
   T_{factor} &= 1.0 + (1 - h_T/100) \times 0.5 \\[4pt]
@@ -348,8 +320,8 @@ The stress factor $SF$ converts actual flight hours into equivalent damage hours
   SF         &= \frac{T_{factor} + V_{factor}}{2}
 \end{align}
 
-An $SF = 1.0$ means nominal aging. $SF = 1.1$ means the component is aging
-10\% faster than its rated-condition life limit assumes.
+$SF = 1.0$ is nominal. $SF = 1.1$ means the component ages 10\% faster than
+its life limit was written for.
 
 \subsection{Remaining Useful Life}
 
@@ -358,8 +330,6 @@ An $SF = 1.0$ means nominal aging. $SF = 1.1$ means the component is aging
   \text{RUL}           &= L_{rated} - \text{Effective Age}
 \end{align}
 
-Where $L_{rated}$ is the OEM-specified life limit (engine: 25,000 FH).
-
 \subsection{Fatigue Fraction Consumed}
 
 \[
@@ -367,30 +337,22 @@ Where $L_{rated}$ is the OEM-specified life limit (engine: 25,000 FH).
 \]
 
 \section{MTBF and Mission Reliability}
-
-\subsection{Mean Time Between Failures}
+\label{sec:mtbf}
 
 \[
-\text{MTBF} = \frac{T_{total}}{N_{failures}}
+\text{MTBF} = \frac{T_{total}}{N_{failures}}, \quad
+\lambda = \frac{1}{\text{MTBF}}, \quad
+R(t) = e^{-\lambda t}
 \]
 
-\textbf{Limitation:} This is a maximum-likelihood point estimate for the
-exponential distribution. With $N < 30$ failures, the 90\% confidence interval
-spans approximately a factor of 5--7 around the point estimate. The MTBF value
-is useful for relative comparison, not precise life prediction.
+$R(t)$ is the probability of completing a $t$-hour mission without failure.
+The model assumes a constant hazard rate, which holds during the useful-life
+phase only. As components approach their life limits the hazard rate increases,
+and $R(t)$ will overestimate reliability.
 
-\subsection{Failure Rate and Mission Reliability}
-
-\begin{align}
-  \lambda   &= \frac{1}{\text{MTBF}} \\[4pt]
-  R(t)      &= e^{-\lambda t}
-\end{align}
-
-$R(t)$ is the probability of completing a mission of duration $t$ without
-failure, under the exponential (constant failure rate) model. This is valid
-only during the useful-life phase of the bathtub curve. As the aircraft
-approaches its life limit, the wear-out failure rate will increase and
-$\lambda$ will underestimate the true hazard.
+With $N < 30$ failures the 90\% CI on MTBF spans roughly a factor of 5--7,
+so the point estimate should not be used for safety-critical planning at
+this sample size.
 
 \section{FMEA Risk Priority Number}
 
@@ -398,13 +360,12 @@ $\lambda$ will underestimate the true hazard.
 \text{RPN} = S \times P \times D
 \]
 
-Where:
 \begin{itemize}
-  \item $S$ — Severity (1--10): impact of the failure on safety and operations.
-  \item $P$ — Probability (1--10): likelihood of failure in the near term,
-        derived from health score: $P = \lceil (100 - H_{sub})/100 \times 10 \rceil$.
-  \item $D$ — Detectability (1--10): how easily the failure is detected before
-        it causes operational impact.
+  \item $S$: Severity (1--10). Fixed per subsystem in this implementation.
+  \item $P$: Probability (1--10), derived from health score:
+        $P = \lceil (100 - H_{sub})/100 \times 10 \rceil$.
+  \item $D$: Detectability (1--10). Assigned based on how visible the
+        degradation is at the current health level.
 \end{itemize}
 
 \begin{table}[h!]
@@ -413,21 +374,21 @@ Where:
 \toprule
 \textbf{Risk Tier} & \textbf{RPN Range} & \textbf{Response} \\
 \midrule
-CRITICAL & $\geq 600$     & Immediate grounding or maintenance action \\
-HIGH     & $300 - 599$    & Maintenance within 50 flight hours \\
-MEDIUM   & $100 - 299$    & Maintenance within 200 flight hours \\
-LOW      & $< 100$        & Continue monitoring; action at next scheduled interval \\
+CRITICAL & $\geq 600$  & Immediate grounding or maintenance action \\
+HIGH     & $300 - 599$ & Maintenance within 50 FH \\
+MEDIUM   & $100 - 299$ & Maintenance within 200 FH \\
+LOW      & $< 100$     & Action at next scheduled interval \\
 \bottomrule
 \end{tabular}
-\caption{RPN risk tier classification and response thresholds.}
+\caption{RPN classification and required response.}
 \end{table}
 
 % ============================================================
-\chapter{Worked Example — Aircraft AC-102}
+\chapter{Worked Example -- Aircraft AC-102}
 \label{ch:worked}
 
-Aircraft AC-102 (N7734W, Airbus A320-200) is in a degraded scenario. Input
-state at the time of this analysis:
+AC-102 (N7734W, Airbus A320-200) is a mid-life aircraft in a degraded scenario.
+Input state:
 
 \begin{table}[h!]
 \centering
@@ -455,29 +416,24 @@ H_{engine} = 0.30 \cdot h_T + 0.30 \cdot h_V + 0.20 \cdot h_P + 0.20 \cdot h_U
 \paragraph{Temperature score.} $T = 720^\circ$C; nominal = 650, warning = 750.
 
 \[
-h_T = 80 + \frac{750 - 720}{750 - 650} \times 20 = 80 + \frac{30}{100} \times 20 = 86
+h_T = 80 + \frac{750 - 720}{750 - 650} \times 20 = 80 + 6.0 = 86
 \]
 
 \paragraph{Vibration score.} $V = 4.2$ mm/s; nominal = 2.0, warning = 5.0.
 
 \[
-h_V = 80 + \frac{5.0 - 4.2}{5.0 - 2.0} \times 20 = 80 + \frac{0.8}{3.0} \times 20 = 85.3 \rightarrow 85
+h_V = 80 + \frac{5.0 - 4.2}{5.0 - 2.0} \times 20 = 80 + 5.3 = 85.3 \rightarrow 85
 \]
 
-\paragraph{Oil pressure score.} $P = 51$ PSI; nominal = 60, warning = 45 (higher is better).
+\paragraph{Oil pressure score.} $P = 51$ PSI; nominal = 60, warning = 45. Higher is better.
 
 \[
-h_P = 80 + \frac{51 - 45}{60 - 45} \times 20 = 80 + \frac{6}{15} \times 20 = 88
+h_P = 80 + \frac{51 - 45}{60 - 45} \times 20 = 80 + 8.0 = 88
 \]
 
 \paragraph{Usage score.} $FH = 14{,}200$, $L_{rated} = 25{,}000$.
-
-\[
-h_U = \max\!\left(0,\; 100 \cdot \left(1 - \frac{14{,}200}{25{,}000}\right)\right) = 100 \times 0.432 = 43.2
-\]
-
-Wait — the usage score function used in this implementation maps to the $[80, 100]$ band
-for usage fractions below 75\% (to avoid penalising normal accumulated hours too harshly):
+Usage fraction = 0.568, which is below 75\%, so the score stays in the
+$[80, 100]$ band:
 
 \[
 h_U = 80 + 20 \times \frac{0.75 - 0.568}{0.75} = 80 + 4.9 = 84.9 \rightarrow 85
@@ -491,36 +447,35 @@ H_{engine} = 0.30(86) + 0.30(85) + 0.20(88) + 0.20(85)
 \]
 
 \medskip
-\noindent\textbf{Engineering judgment:} 86\% classifies as nominal / low-risk.
-This is correct for planning purposes. However, the individual inputs deserve
-attention: vibration ($h_V = 85$) and oil pressure ($h_P = 88$) are both
-approaching their warning thresholds. These two sensors are diagnostically
-correlated — simultaneous vibration increase and oil pressure decrease is
-consistent with early bearing wear, where surface degradation increases dynamic
-loading while simultaneously allowing oil to bypass through widened clearances.
-A composite score of 86\% does not adequately capture this pattern.
+\noindent\textbf{Note:} 86\% is LOW risk and correct for the maintenance
+schedule. What the composite score misses is that $h_V = 85$ and $h_P = 88$
+are both close to their warning thresholds, and they are correlated. Simultaneous
+vibration increase and oil pressure drop is consistent with bearing wear: the
+degrading surface increases dynamic load while also letting oil bypass through
+widened clearances. Neither sensor alone triggers a flag; together they are a
+meaningful signal.
 
 \section{Vibration Severity Index}
 
 \[
-\text{VSI} = \frac{V_{measured}}{V_{nominal}} = \frac{4.2}{2.0} = \mathbf{2.10}
+\text{VSI} = \frac{4.2}{2.0} = \mathbf{2.10}
 \]
 
-ISO 10816 Zone B (1.8--2.8): Acceptable for unrestricted operation.
-Margin to Zone C boundary: $2.8 - 2.10 = 0.70$ mm/s.
+Zone B (1.8--2.8): acceptable for unrestricted operation.
+Margin to Zone C: $2.8 - 2.10 = 0.70$ mm/s.
 
 \medskip
-\noindent\textbf{Engineering judgment:} VSI 2.10 is within the acceptable zone.
-The concern is rate of change, not point value. If VSI has drifted from 1.8 to
-2.10 over the last 300 flight hours (+0.1 mm/s per 100 hours), Zone C would be
-reached in approximately 700 flight hours. A vibration trend plot should be
-maintained with a defined intervention threshold before that point.
+\noindent\textbf{Note:} The point value is fine. What matters is the rate.
+If VSI has drifted from 1.8 to 2.10 over the last 300 FH (+0.1/100 hrs),
+Zone C is roughly 700 FH away. I would set up a trend plot and define an
+intervention threshold before that point rather than waiting for the threshold
+to be crossed.
 
-\section{Stress Factor and Remaining Useful Life}
+\section{Stress Factor and RUL}
 
 \begin{align}
-  T_{factor} &= 1.0 + (1 - 86/100) \times 0.5 = 1.0 + 0.07 = 1.07 \\[4pt]
-  V_{factor} &= 1.0 + (1 - 85/100) \times 0.8 = 1.0 + 0.12 = 1.12 \\[4pt]
+  T_{factor} &= 1.0 + (1 - 86/100) \times 0.5 = 1.07 \\[4pt]
+  V_{factor} &= 1.0 + (1 - 85/100) \times 0.8 = 1.12 \\[4pt]
   SF         &= \frac{1.07 + 1.12}{2} = \mathbf{1.095}
 \end{align}
 
@@ -529,12 +484,10 @@ maintained with a defined intervention threshold before that point.
   \text{RUL}           &= 25{,}000 - 15{,}549 = \mathbf{9{,}451 \text{ hrs}}
 \end{align}
 
-\medskip
-\noindent\textbf{Engineering judgment:} Without the stress correction, RUL
-would be $25{,}000 - 14{,}200 = 10{,}800$ hrs. The stress factor reduces this
-by 1,349 hrs. At a typical utilisation of 2,700 FH/year, this means the engine
-reaches its life limit approximately six months earlier than an uncorrected
-calculation would predict.
+Without the stress correction: $25{,}000 - 14{,}200 = 10{,}800$ hrs.
+The stress factor removes 1,349 hrs. At 2,700 FH/year utilisation, that is
+about six months of additional life consumed compared to what a naive calculation
+would show.
 
 \section{MTBF and Mission Reliability}
 
@@ -545,33 +498,30 @@ calculation would predict.
 \end{align}
 
 \medskip
-\noindent\textbf{Engineering judgment:} MTBF = 2,840 hrs is based on only 5
-failure events. The 90\% confidence interval under a chi-squared estimator
-spans approximately 1,200--8,500 hrs — a factor of 7 range. The point estimate
-is the best available but should not be used for safety-critical decisions at
-this sample size. 30--50 failure events are typically required before MTBF
-estimates are used in reliability-centred maintenance (RCM) planning.
+\noindent\textbf{Note:} With only 5 failures, the 90\% CI on MTBF spans roughly
+1,200--8,500 hrs. The 2,840-hr figure is the best available estimate, but I
+would not use it for safety-critical planning. Typically 30--50 events are
+needed before MTBF feeds into RCM decisions.
 
-$R(100) = 96.5\%$ is valid today under the constant-failure-rate assumption.
-As the engine approaches its 25,000-hr life limit, wear-out effects will
-increase the hazard rate and this figure will overestimate true reliability.
+$R(100) = 96.5\%$ holds under constant-failure-rate. As AC-102 approaches
+its 25,000-hr life limit, wear-out will drive $\lambda$ higher and the true
+reliability will be lower than this.
 
-\section{FMEA Risk Priority Number — Engine}
+\section{FMEA RPN -- Engine}
 
 \begin{align}
-  S   &= 9 \quad \text{(engine failure: safety-critical)} \\
+  S   &= 9 \quad \text{(safety-critical failure mode)} \\
   P   &= \lceil (100 - 86) / 100 \times 10 \rceil = \lceil 1.4 \rceil = 2 \\
-  D   &= 5 \quad \text{(degradation moderately detectable at current health)} \\[4pt]
-  \text{RPN} &= 9 \times 2 \times 5 = \mathbf{90 \text{ (LOW)}}
+  D   &= 5 \quad \text{(degradation visible but not alarming)} \\[4pt]
+  \text{RPN} &= 9 \times 2 \times 5 = \mathbf{90 \text{ -- LOW}}
 \end{align}
 
 \medskip
-\noindent\textbf{Engineering judgment:} RPN = 90 correctly classifies this as
-LOW priority at the current health score. The limitation is that RPN scores a
-snapshot, not a trend. An RPN of 90 with worsening vibration and declining oil
-pressure carries higher near-term risk than the same RPN score on a stable
-aircraft. I would maintain the LOW classification for formal tracking but add a
-non-routine monitoring flag for the correlated vibration + oil pressure pattern.
+\noindent\textbf{Note:} RPN = 90 is correct for formal scheduling. The issue
+is that RPN scores the current snapshot, not the direction of travel. An RPN of
+90 on a stable aircraft is different from the same score on one with rising
+vibration and dropping oil pressure. I would keep the LOW classification but add
+a monitoring flag for the correlated sensor pattern.
 
 \section{Landing Gear Fatigue Life}
 
@@ -579,89 +529,71 @@ non-routine monitoring flag for the correlated vibration + oil pressure pattern.
 \text{FAT} = \frac{9{,}712}{50{,}000} \times 100 = \mathbf{19.4\%}
 \]
 
-Remaining cycles: $50{,}000 - 9{,}712 = 40{,}288$. At current utilisation
-(9,800 cycles over $\approx 8$ years $\approx 1{,}225$ cycles/year), the
-structural life limit would not be reached for $\approx 33$ years — well beyond
-any realistic service life. The binding life limit for AC-102 is the engine
-(RUL = 9,451 hrs), not the airframe structure.
+At roughly 1,225 cycles/year, the structural life limit is 33 years away.
+For AC-102, the engine RUL (9,451 hrs) is the binding constraint, not the
+airframe.
 
 % ============================================================
-\chapter{Overall Engineering Assessment — AC-102}
+\chapter{Engineering Assessment -- AC-102}
 
-The headline metric — Engine Health 86\% — places AC-102 in the LOW risk
-category. This classification is defensible, and it would be the correct entry
-in a maintenance tracking system.
+Engine Health 86\% puts AC-102 in the LOW risk category. That is the correct
+formal classification.
 
-What the headline does not show is the combination of two parameters, both
-healthy in isolation but both trending toward their warning thresholds:
-
-\begin{itemize}
-  \item Engine vibration at VSI 2.10 (ISO Zone B, boundary at 2.8) —
-        0.70 mm/s margin to the unsatisfactory threshold.
-  \item Oil pressure at 51 PSI — only 6 PSI above the warning threshold of
-        45 PSI.
-\end{itemize}
-
-Together, these are consistent with early bearing wear, a failure mode where
-vibration increases and oil pressure decreases simultaneously as the bearing
-surface degrades. A weighted-average health score is dragged upward by the
-four healthy sensors and can obscure this pattern.
+The issue is what the composite score does not show. Vibration is at VSI 2.10
+(0.70 mm/s from Zone C) and oil pressure is at 51 PSI (6 PSI above the warning
+threshold). Both are nominally acceptable. The combination is not a coincidence:
+these two parameters moving in opposite directions simultaneously is the
+fingerprint of early bearing wear. The weighted average gets pulled up by the
+four healthy sensors and returns 86\%, which could lead a technician to miss it.
 
 \medskip
 \noindent\textbf{Recommended actions:}
 
 \begin{enumerate}
-  \item Maintain LOW risk classification for formal scheduling.
-  \item Flag for borescope inspection at the next scheduled C-check.
-  \item Establish a vibration and oil pressure trend plot; define an
-        intervention threshold at VSI 2.5 and oil pressure 48 PSI.
-  \item If either parameter crosses its warning threshold before the next
-        scheduled inspection, escalate to HIGH and schedule within 50 FH.
+  \item Keep LOW classification for the maintenance schedule.
+  \item Add to the next C-check borescope list.
+  \item Set up a trend plot for vibration and oil pressure.
+        Intervention thresholds: VSI 2.5, oil pressure 48 PSI.
+  \item If either crosses its warning threshold before the next scheduled
+        check, escalate to HIGH and action within 50 FH.
 \end{enumerate}
 
 \medskip
-\noindent\textbf{Primary life limit:} Engine RUL = 9,451 FH (stress-adjusted).
-\\
-\textbf{Non-binding:} Landing gear (19.4\% fatigue), electrical, hydraulic —
-all nominal.
+\noindent Primary life limit: Engine RUL = 9,451 FH (stress-adjusted). \\
+Non-binding: Landing gear (19.4\%), electrical, hydraulic -- all nominal.
 
 % ============================================================
 \chapter{Model Validation and Sanity Checks}
 
-\section{Unit Tests}
+\section{Automated Tests}
 
-The implementation includes 18 automated unit tests covering all calculation
-modules (health score, RUL, reliability, risk). These are property-based sanity
-checks, not empirical validation against real fleet data:
+18 unit tests cover all calculation modules. These check properties, not
+empirical accuracy:
 
 \begin{itemize}
-  \item Scores are bounded to $[0, 100]$.
-  \item Reliability $R(t) \in (0, 1]$ for all $t \geq 0$.
-  \item $R(t) \to 0$ as $t \to \infty$.
-  \item Stress factor $SF \geq 1.0$ for all physically-possible sensor readings.
-  \item RUL is non-negative (floored at 0).
-  \item RPN $\in [1, 1000]$.
+  \item Health scores bounded to $[0, 100]$.
+  \item $R(t) \in (0, 1]$ for all $t \geq 0$, $R(t) \to 0$ as $t \to \infty$.
+  \item Stress factor $SF \geq 1.0$ for all valid sensor readings.
+  \item RUL floored at 0.
+  \item RPN in $[1, 1000]$.
 \end{itemize}
 
-\section{Dimensional Analysis}
+\section{Dimensional Consistency}
 
 \begin{itemize}
-  \item Health scores: dimensionless, $[0, 100]$ — confirmed.
-  \item $\lambda$: units of $\text{hr}^{-1}$ — confirmed (MTBF in hours,
-        $\lambda = 1/\text{MTBF}$, $\lambda t$ is dimensionless).
-  \item RUL: units of flight hours — confirmed ($FH \times SF$ cancels to hours,
-        $L_{rated}$ in hours).
-  \item VSI: dimensionless ratio — confirmed (both numerator and denominator in mm/s).
+  \item Health scores: dimensionless, $[0, 100]$.
+  \item $\lambda$: hr$^{-1}$. $\lambda t$ is dimensionless. Correct.
+  \item RUL: flight hours. $FH \times SF$ is hours, $L_{rated}$ is hours. Correct.
+  \item VSI: dimensionless (mm/s divided by mm/s). Correct.
 \end{itemize}
 
-\section{Limiting Behaviour}
+\section{Boundary Behaviour}
 
 \begin{itemize}
-  \item At $FH = 0$: usage score $= 100$, stress factor $= 1.0$, RUL $= L_{rated}$. Correct.
-  \item At $FH = L_{rated}$: RUL $= 0$ (floored). Correct.
-  \item At nominal sensor values: all scores $= 100$, $SF = 1.0$. Correct.
-  \item At critical sensor values: all scores $\approx 40$, $SF > 1.0$. Correct.
-  \item At $t = 0$: $R(0) = e^0 = 1.0$. Correct.
+  \item $FH = 0$: usage score = 100, $SF = 1.0$, RUL = $L_{rated}$. Correct.
+  \item $FH = L_{rated}$: RUL = 0. Correct.
+  \item All sensors at nominal: all scores = 100, $SF = 1.0$. Correct.
+  \item $t = 0$: $R(0) = 1.0$. Correct.
 \end{itemize}
 
 % ============================================================
@@ -669,121 +601,90 @@ checks, not empirical validation against real fleet data:
 \label{ch:limitations}
 
 \begin{enumerate}
-  \item \textbf{No real sensor data.} All telemetry is procedurally generated
-        from seeded pseudo-random functions with banded noise. Model parameters
-        are not calibrated to any real aircraft type or failure dataset.
+  \item \textbf{No real sensor data.} Telemetry is procedurally generated from
+        seeded pseudo-random functions. No model parameters are calibrated to a
+        real aircraft type or failure dataset.
 
-  \item \textbf{Exponential reliability model.} The exponential distribution
-        assumes a constant hazard rate. Real aircraft components exhibit
-        wear-out behaviour (increasing hazard rate in late life) better
-        described by a Weibull distribution with shape parameter $\beta > 1$.
-        The exponential model is optimistic for components approaching their
-        life limits.
+  \item \textbf{Exponential reliability model.} Constant hazard rate is only
+        valid in the useful-life phase. Late-life wear-out is better described
+        by a Weibull distribution ($\beta > 1$). The current model will
+        overestimate reliability as components approach their life limits.
 
-  \item \textbf{Scalar stress factor.} The stress factor is an engineering
-        approximation, not a validated degradation model. Production systems
-        would use physics-of-failure models (Paris law for fatigue crack
-        propagation, Arrhenius for thermal degradation) calibrated against
-        material test data and fleet history.
+  \item \textbf{Scalar stress factor.} This is a simplified approximation. A
+        production system would use physics-of-failure models (Paris law for
+        crack growth, Arrhenius for thermal degradation) calibrated to material
+        data and fleet history.
 
-  \item \textbf{MTBF confidence.} With $N < 10$ failure events per aircraft,
-        MTBF estimates carry wide confidence intervals. The point estimate is
-        used throughout; the uncertainty is not propagated to downstream
-        reliability or risk calculations.
+  \item \textbf{MTBF confidence.} With $N < 10$ failures per aircraft, confidence
+        intervals are wide. The uncertainty is not propagated to downstream
+        calculations; the point estimate is used throughout.
 
-  \item \textbf{Static sensor weights.} Subsystem health score weights are
-        fixed engineering judgments, not data-derived. In a production PHM
-        system, weights would be determined by regression against known failure
-        outcomes or by formal importance analysis.
+  \item \textbf{Fixed sensor weights.} Weights are engineering judgments, not
+        regression-derived. A production system would determine weights from
+        failure outcome data or formal importance analysis.
 
-  \item \textbf{No sensor cross-correlation.} Health scores treat each sensor
-        independently. Correlated failure signatures (e.g., simultaneous
-        vibration increase and oil pressure decrease as discussed for AC-102)
-        are not explicitly modelled and can be masked by the weighted average.
+  \item \textbf{No cross-correlation between sensors.} Correlated failure
+        signatures (like the AC-102 vibration + oil pressure case) are not
+        explicitly detected. The weighted average can mask them.
 
-  \item \textbf{Regulatory compliance.} This system does not meet the
-        requirements for airworthiness-relevant maintenance decision support
-        under FAA AC 120-66B, EASA Part-M, or any applicable MRB / MSG-3
-        process. It is an educational proof-of-concept only.
+  \item \textbf{Not regulatory compliant.} This does not meet FAA AC 120-66B,
+        EASA Part-M, or MSG-3 requirements for maintenance decision support.
 \end{enumerate}
 
 % ============================================================
-\chapter{Recommendations for Production Implementation}
-
-If this proof-of-concept were to be developed into a production-grade PHM
-system, the following engineering steps would be required:
+\chapter{Steps to a Production System}
+\label{ch:production}
 
 \begin{enumerate}
-  \item \textbf{Real data acquisition:} Interface with certified aircraft data
-        bus standards (ARINC 429, ARINC 664/AFDX, or direct QAR download).
-        Ensure data traceability and timestamp synchronisation.
+  \item \textbf{Real data acquisition.} Interface with ARINC 429 / ARINC 664
+        or QAR download. Establish data traceability and timestamp sync.
 
-  \item \textbf{Weibull fitting:} Replace the exponential model with a Weibull
-        distribution fitted to fleet failure history. Estimate shape parameter
-        $\beta$ and scale parameter $\eta$ using maximum likelihood estimation.
-        Use Bayesian updating to incorporate new failures as they occur.
+  \item \textbf{Weibull fitting.} Replace the exponential model with a Weibull
+        fit to fleet failure history. Estimate $\beta$ and $\eta$ by MLE.
+        Update with each new failure event using Bayesian methods.
 
-  \item \textbf{Degradation model calibration:} Replace linear interpolation
-        with physics-of-failure or data-driven degradation curves (e.g., Paris
-        law for fatigue, Arrhenius for temperature-driven failures). Validate
-        against known failure events.
+  \item \textbf{Degradation model calibration.} Replace linear interpolation
+        with physics-of-failure curves validated against real failure events.
 
-  \item \textbf{Prognostic uncertainty quantification:} All RUL estimates
-        should carry confidence intervals, not just point estimates. Monte Carlo
-        propagation of sensor uncertainty into RUL distributions is the minimum
-        acceptable standard.
+  \item \textbf{Uncertainty propagation.} All RUL estimates should carry
+        confidence bounds, not just point values. Monte Carlo propagation from
+        sensor uncertainty to RUL distribution is the minimum standard.
 
-  \item \textbf{FMEA formalisation:} Replace the simplified RPN model with a
-        formally reviewed FMEA / FMECA per ARP 4761. Assign severity, probability,
-        and detectability per failure mode, not per subsystem.
+  \item \textbf{Formal FMEA.} Conduct FMEA/FMECA per ARP 4761. Assign $S$,
+        $P$, $D$ per failure mode rather than per subsystem.
 
-  \item \textbf{Regulatory approval:} Submit to applicable regulatory authority
-        (FAA DER, EASA DOA) for approval as a health management system under the
-        relevant certification basis. Comply with DO-178C (software) and
-        DO-254 (hardware) as applicable.
+  \item \textbf{Regulatory approval.} Submit to FAA/EASA for health management
+        system approval. Comply with DO-178C (software) and DO-254 (hardware).
 
-  \item \textbf{Operator integration:} Integrate with airline Maintenance
-        Management System (MMS) / MRO system for automatic work order generation,
-        parts provisioning, and regulatory compliance tracking.
+  \item \textbf{MRO integration.} Connect to the airline's MMS for automatic
+        work order generation and parts provisioning.
 \end{enumerate}
 
 % ============================================================
 \chapter{Conclusions}
 
-This proof-of-concept demonstrates that a coherent, traceable PHM system can
-be constructed from fundamental reliability engineering principles without
-proprietary tools or fleet data. The explicit calculation chain — from raw
-sensor reading through normalised score, weighted composite, stress-adjusted
-RUL, exponential reliability, and FMEA RPN — is fully reproducible from the
-formulas in Chapter~\ref{ch:methodology} and verified by the worked example
-in Chapter~\ref{ch:worked}.
+The calculation chain from raw sensor reading to maintenance recommendation is
+fully explicit and reproducible. Every output in the web interface can be
+derived by hand from the formulas in Chapter~\ref{ch:methodology}, and the
+worked example in Chapter~\ref{ch:worked} does that for AC-102 in full.
 
-The engineering value of the system is not its predictive accuracy (which
-cannot be validated without real data) but its interpretability. Every
-maintenance recommendation produced by the system can be traced back to a
-specific sensor reading, a specific formula, and a specific engineering
-judgment call. This auditability is a prerequisite for any PHM system
-seeking regulatory acceptance.
+The AC-102 analysis surfaced a practical limitation of composite health scoring:
+the overall score of 86\% is technically correct, but it obscures the correlated
+vibration and oil pressure trend that a maintainer should actually be watching.
+This is not unique to this implementation. Any weighted-average health score
+has this property. The fix is to display the individual sensor inputs alongside
+the composite, which the interface does.
 
-The worked example for AC-102 illustrates the most important limitation of
-composite health scoring: a weighted average can return a reassuring headline
-number while masking a correlated degradation pattern that, in a real fleet
-context, would warrant closer attention. This is not a flaw in the model —
-it is an argument for displaying the individual sensor inputs alongside the
-composite score, which the software interface does.
-
-\medskip
-\noindent\textbf{Statement of educational intent:}
-This project demonstrates the ability to select appropriate engineering models,
-apply them correctly, recognise their assumptions and limitations, and draw
-engineering judgments from the results — not just execute calculations. The
-gap between this proof-of-concept and a production PHM system is well-defined
-and has been explicitly documented above.
+The gap between this proof-of-concept and a deployable system is real and
+documented in Chapter~\ref{ch:limitations}. The main items are real sensor data,
+calibrated degradation models, and regulatory approval. None of those are
+unsolvable engineering problems; they just require resources and fleet history
+that are outside the scope of a portfolio project.
 
 \vfill
 \noindent\hrule\vspace{0.5em}
 \small
-\noindent\texttt{END OF REPORT — REV A}
+\noindent\texttt{END OF REPORT -- REV A}
 \hfill
 \texttt{Aircraft Fleet Predictive Maintenance System / Robert A. / June 2026}
 
